@@ -4,19 +4,21 @@ import sys
 
 class Connector:
     def __init__(self):
-        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
         self.connected = False
         
     def connect(self,host,port):
+        
         if not self.connected:
             try:
+                self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 self.s.connect((host, port))
             except socket.error as msg:
                 self.s.close()
                 self.s = None
             if self.s is None:
                 sys.stderr.write("ERROR: could not open socket\n")
-                sys.exit(1)
+                return
             self.connected = True
 
     def disconnect(self):
@@ -41,6 +43,7 @@ class EL737(Tkinter.LabelFrame):
         self.hostname = Tkinter.StringVar()
         self.portname = Tkinter.StringVar()
         self.cmd = Tkinter.StringVar()
+        self.entry = Tkinter.Entry
         self.initialize()
         self.grid()
 
@@ -86,12 +89,12 @@ class EL737(Tkinter.LabelFrame):
         f = Tkinter.Frame(self)
         lbl = "command: "
         lb = Tkinter.Label(f,text=lbl)
-        entry = Tkinter.Entry(f,textvariable=self.cmd)
+        self.entry = Tkinter.Entry(f,textvariable=self.cmd)
         submit = Tkinter.Button(f,text=u"Submit",
                                     command=self.OnButtonClick,relief="groove")
-        entry.bind("<Return>",(lambda event: self.OnButtonClick()))
+        self.entry.bind("<Return>",(lambda event: self.OnButtonClick()))
         lb.grid(column=0,row=0)
-        entry.grid(column=1,row=0)
+        self.entry.grid(column=1,row=0)
         submit.grid(column=0,row=1,columnspan=2)
         f.grid(column=0,row=1,columnspan=2)
 
@@ -111,3 +114,4 @@ class EL737(Tkinter.LabelFrame):
 
         self.echobox.insert(Tkinter.END,
                                 self.mess.send(self.cmd.get()+"\r"))
+        self.entry.delete(0, 'end')
