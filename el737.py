@@ -1,10 +1,43 @@
 import Tkinter, tkFileDialog
+import socket
+import sys
 
+class Connector:
+    def __init__(self):
+        self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.connected = False
+        
+    def connect(self,host,port):
+        if not self.connected:
+            try:
+                self.s.connect((host, port))
+            except socket.error as msg:
+                self.s.close()
+                self.s = None
+            if self.s is None:
+                sys.stderr.write("ERROR: could not open socket\n")
+                sys.exit(1)
+            self.connected = True
+
+    def disconnect(self):
+        if self.connected:
+            self.s.close()
+        
+    def send(self,message):
+        if self.connected:
+            sent = self.s.send(message)
+            if sent == 0:
+                raise RuntimeError("socket connection broken")
+#            return self.s.recv(1)
+        else:
+            raise RuntimeError("socket not connected")
+        
 class EL737(Tkinter.LabelFrame):
+    
     def __init__(self,parent,name):
+        self.mess = Connector()
         Tkinter.LabelFrame.__init__(self,parent,text=name)
         self.parent = parent
-
         self.hostname = Tkinter.StringVar()
         self.portname = Tkinter.StringVar()
         self.cmd = Tkinter.StringVar()
@@ -69,5 +102,12 @@ class EL737(Tkinter.LabelFrame):
         f.grid(column=0,row=2,columnspan=2)
 
     def OnButtonClick(self):
-        self.echobox.insert(Tkinter.END,self.cmd.get())
+        if self.mess.connected == False:
+            self.mess.connect(self.hostname.get(),
+                                  int(self.portname.get()))
 
+        self.echobox.insert(Tkinter.END,
+                                self.cmd.get())
+
+        self.echobox.insert(Tkinter.END,
+                                self.mess.send(self.cmd.get()+"\r"))
